@@ -1,2 +1,27 @@
-data
-venv
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+
+# IDE & Editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Operating System
+.DS_Store
+Thumbs.db
+
+# Data & Dataset Artifacts
+data/*
+!data/.gitkeep
+assets/*
+!assets/.gitkeep
+*.pickle
