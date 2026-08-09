@@ -1,6 +1,6 @@
 # Sign Language Recognition
 
-Real-time American Sign Language (ASL) alphabet recognition using MediaPipe hand landmarks and a scikit-learn Random Forest classifier in Python.
+Real-time sign language alphabet recognition using MediaPipe hand landmarks and a scikit-learn classifier, in Python.
 
 [![Python 3.8+](https://img.shields.io/badge/python-3.8%2B-blue.svg)](https://www.python.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
