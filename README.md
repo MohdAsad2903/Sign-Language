@@ -27,9 +27,9 @@ Unlike traditional Convolutional Neural Networks (CNNs) that process raw RGB pix
 
 ## Features
 
-- **Automated Data Collection**: Webcam utility to capture dataset samples across 26 gesture categories.
-- **Landmark Extraction & Normalization**: Extracts 21 2D hand joint coordinates relative to bounding box origins.
-- **Efficient ML Classifier**: Trains a Random Forest classifier using scikit-learn.
+- **Automated Data Collection**: Webcam utility to capture dataset samples across 26 gesture categories (`0`–`25`).
+- **Landmark Extraction & Normalization**: Extracts 21 2D hand joint coordinates relative to bounding box origins (\(21 \times 2 = 42\)-dimensional vector).
+- **Efficient ML Classifier**: Trains a Random Forest classifier using `scikit-learn` with an 80/20 stratified train-test split.
 - **Real-Time Webcam Overlay**: Draws hand skeletons, bounding boxes, and predicted letter overlays on live video feeds.
 
 ---
@@ -47,6 +47,7 @@ flowchart LR
 ```
 
 ### Landmark Normalization & Translation Invariance
+
 MediaPipe extracts 21 3D coordinates \((x_i, y_i, z_i)\). To make classification invariant to hand position within the webcam frame, coordinates are normalized relative to the minimum coordinate values of the detected hand bounding box:
 
 \[
@@ -63,9 +64,9 @@ This yields a 42-dimensional feature vector (\(21 \times 2\)) invariant to globa
 | :--- | :--- |
 | **Python** | Primary programming language (Python 3.8 – 3.11 supported) |
 | **MediaPipe** | 21 hand landmark detection & spatial coordinate extraction |
-| **OpenCV** | Webcam video capture, image processing, and real-time visualization |
-| **scikit-learn** | Random Forest classification model training & accuracy scoring |
-| **NumPy** | Array manipulations for landmark vectors |
+| **OpenCV** | Webcam video capture, frame resizing, and real-time visualization |
+| **scikit-learn** | Random Forest classification model training & evaluation |
+| **NumPy** | High-performance array manipulations for landmark feature vectors |
 
 ---
 
@@ -75,7 +76,7 @@ This yields a 42-dimensional feature vector (\(21 \times 2\)) invariant to globa
 Sign-Language/
 ├── src/
 │   ├── 01_collect_images.py      # Script 1: Capture dataset images via webcam
-│   ├── 02_create_dataset.py      # Script 2: Extract MediaPipe landmarks to data.pickle
+│   ├── 02_create_dataset.py      # Script 2: Extract MediaPipe landmarks to data/data.pickle
 │   ├── 03_train_model.py         # Script 3: Train Random Forest classifier -> models/model.p
 │   └── 04_realtime_inference.py  # Script 4: Live webcam sign recognition & overlay
 ├── models/
@@ -137,23 +138,24 @@ pip install -r requirements.txt
 
 ## Usage
 
-> **Note**: You can run real-time inference immediately using the pre-trained model stored in `models/model.p`! Steps 1–3 are only required if you wish to collect custom images and retrain the model.
+> **Note**: You can run real-time inference immediately using the included pre-trained model in `models/model.p`! Steps 1–3 are only required if you wish to collect custom images and retrain the model.
 
 ### Quick Start: Real-Time Inference
 
-Run the inference script to open the webcam window:
+Run the inference script to launch live recognition:
 
 ```bash
 python src/04_realtime_inference.py
 ```
-- Press **`Q`** while focused on the video window to quit.
+
+- **Controls**: Press **`Q`** while focused on the video window to quit.
 
 ---
 
-### Retraining Pipeline (Steps 1–3)
+### Custom Retraining Pipeline (Steps 1–3)
 
 #### Step 1: Collect Image Data
-Captures 100 images for each of the 26 alphabet classes (0–25):
+Captures 100 images for each of the 26 alphabet classes (`0` to `25`):
 
 ```bash
 python src/01_collect_images.py
@@ -161,14 +163,14 @@ python src/01_collect_images.py
 - Press **`Q`** when ready to start capturing each class.
 
 #### Step 2: Create Landmark Dataset
-Processes images in `data/` with MediaPipe Hands and generates `data/data.pickle`:
+Processes images under `data/` with MediaPipe Hands and generates `data/data.pickle`:
 
 ```bash
 python src/02_create_dataset.py
 ```
 
 #### Step 3: Train Classifier
-Trains the Random Forest model on `data/data.pickle` and saves the output to `models/model.p`:
+Trains the Random Forest model on `data/data.pickle` and outputs `models/model.p`:
 
 ```bash
 python src/03_train_model.py
@@ -180,16 +182,28 @@ python src/03_train_model.py
 
 - **Classes**: 26 categories representing ASL alphabet letters (`0` to `25` mapped to `A` through `Z`).
 - **Samples per Class**: 100 images per class (2,600 images total).
-- **Format**: Raw RGB images captured locally under `data/<class_id>/` (git-ignored as regenerable artifacts).
+- **Storage**: Raw RGB images are stored locally under `data/<class_id>/` (git-ignored as regenerable artifacts).
 
 ---
 
 ## Model & Evaluation
 
-- **Algorithm**: `RandomForestClassifier` (scikit-learn defaults).
-- **Feature Vector**: 42 numeric values per hand (\(21 \times 2\) normalized landmark coordinates).
-- **Serialization**: Saved as a Python pickle dictionary `{'model': model}` at `models/model.p`.
-- **Accuracy**: Run `python src/03_train_model.py` to evaluate accuracy on your dataset split.
+- **Algorithm**: `RandomForestClassifier` (scikit-learn).
+- **Train/Test Split**: 80% training data, 20% testing data (stratified by class label).
+- **Feature Vector**: 42 numerical features per hand (\(21 \text{ landmarks} \times 2 \text{ coordinates}\)).
+- **Serialization**: Model weights saved as a Python pickle dictionary `{'model': model}` at `models/model.p`.
+- **Accuracy Evaluation**: Run `python src/03_train_model.py` to evaluate classification accuracy on your local dataset.
+
+---
+
+## Troubleshooting
+
+| Issue / Error | Cause | Solution |
+| :--- | :--- | :--- |
+| `FileNotFoundError: ... model.p` | Pre-trained model missing | Run `python src/03_train_model.py` to train and save `models/model.p`. |
+| `cv2.error: Cannot open camera` | Camera index occupied or denied permission | Ensure webcam permissions are granted and camera index `0` is free. |
+| `ModuleNotFoundError: mediapipe` | Environment missing dependencies | Activate your virtual environment and run `pip install -r requirements.txt`. |
+| `data.pickle not found` | Dataset step skipped | Run `python src/02_create_dataset.py` before executing the training script. |
 
 ---
 
@@ -198,7 +212,7 @@ python src/03_train_model.py
 - **Static Gestures Only**: Designed for single-frame static hand signs. Dynamic signs requiring motion (e.g., ASL letters 'J' and 'Z') are not currently supported.
 - **Lighting & Background Sensitivity**: Extreme low-light conditions or skin-tone-colored backgrounds may affect MediaPipe hand detection.
 - **Single Hand Focus**: Optimized for single-hand alphabet signs.
-- **Subject Diversity**: Pre-trained model accuracy depends on training subject hand traits; retraining on multiple hands improves generalizability.
+- **Subject Generalization**: Pre-trained model performance depends on training subject hand traits; retraining on multiple hands improves generalizability.
 
 ---
 
